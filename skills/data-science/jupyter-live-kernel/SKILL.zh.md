@@ -1,0 +1,152 @@
+---
+name: jupyter-live-kernel
+description: >
+  通过hamelnb使用实时Jupyter内核进行有状态的迭代Python执行。当任务涉及探索、迭代或检查中间结果时加载此技能 — 数据科学、机器学习实验、API探索或逐步构建复杂代码。使用终端对实时Jupyter内核运行CLI命令。无需新工具。
+version: 1.0.0
+author: Hermes Agent
+license: MIT
+metadata:
+  hermes:
+    tags: [jupyter, notebook, repl, data-science, exploration, iterative]
+    category: data-science
+---
+
+# Jupyter实时内核（hamelnb）
+
+通过实时Jupyter内核为你提供**有状态的Python REPL**。变量在执行之间持续存在。当你需要逐步构建状态、探索API、检查DataFrames或迭代复杂代码时，使用此技能而不是`execute_code`。
+
+## 何时使用此技能与其他工具
+
+| 工具 | 使用时机 |
+|------|----------|
+| **此技能** | 迭代探索、跨步骤的状态、数据科学、机器学习、"让我尝试这个并检查" |
+| `execute_code` | 需要hermes工具访问（web_search、文件操作）的一次性脚本。无状态。 |
+| `terminal` | Shell命令、构建、安装、git、进程管理 |
+
+**经验法则：** 如果你想要一个Jupyter笔记本用于任务，请使用此技能。
+
+## 先决条件
+
+1. **uv**必须安装（检查：`which uv`）
+2. **JupyterLab**必须安装：`uv tool install jupyterlab`
+3. Jupyter服务器必须正在运行（请参阅下面的设置）
+
+## 设置
+
+hamelnb脚本位置：
+```
+SCRIPT="$HOME/.agent-skills/hamelnb/skills/jupyter-live-kernel/scripts/jupyter_live_kernel.py"
+```
+
+如果尚未克隆：
+```
+git clone https://github.com/hamelsmu/hamelnb.git ~/.agent-skills/hamelnb
+```
+
+### 启动JupyterLab
+
+检查服务器是否已经在运行：
+```
+uv run "$SCRIPT" servers
+```
+
+如果未找到服务器，启动一个：
+```
+jupyter-lab --no-browser --port=8888 --notebook-dir=$HOME/notebooks \
+  --IdentityProvider.token='' --ServerApp.password='' > /tmp/jupyter.log 2>&1 &
+sleep 3
+```
+
+注意：为本地代理访问禁用了令牌/密码。服务器无头运行。
+
+### 为REPL使用创建笔记本
+
+如果你只需要一个REPL（没有现有的笔记本），创建一个最小的笔记本文件：
+```
+mkdir -p ~/notebooks
+```
+编写一个带有一个空代码单元格的最小.ipynb JSON文件，然后通过Jupyter REST API启动内核会话：
+```
+curl -s -X POST http://127.0.0.1:8888/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"path":"scratch.ipynb","type":"notebook","name":"scratch.ipynb","kernel":{"name":"python3"}}'
+```
+
+## 核心工作流程
+
+所有命令都返回结构化JSON。始终使用`--compact`以节省令牌。
+
+### 1. 发现服务器和笔记本
+
+```
+uv run "$SCRIPT" servers --compact
+uv run "$SCRIPT" notebooks --compact
+```
+
+### 2. 执行代码（主要操作）
+
+```
+uv run "$SCRIPT" execute --path <notebook.ipynb> --code '<python code>' --compact
+```
+
+状态在execute调用之间持续存在。变量、导入、对象都存活。
+
+多行代码与$'...'引用一起工作：
+```
+uv run "$SCRIPT" execute --path scratch.ipynb --code $'import os\nfiles = os.listdir(".")\nprint(f"Found {len(files)} files")' --compact
+```
+
+### 3. 检查实时变量
+
+```
+uv run "$SCRIPT" variables --path <notebook.ipynb> list --compact
+uv run "$SCRIPT" variables --path <notebook.ipynb> preview --name <varname> --compact
+```
+
+### 4. 编辑笔记本单元格
+
+```
+# 查看当前单元格
+uv run "$SCRIPT" contents --path <notebook.ipynb> --compact
+
+# 插入新单元格
+uv run "$SCRIPT" edit --path <notebook.ipynb> insert \
+  --at-index <N> --cell-type code --source '<code>' --compact
+
+# 替换单元格源（使用contents输出中的cell-id）
+uv run "$SCRIPT" edit --path <notebook.ipynb> replace-source \
+  --cell-id <id> --source '<new code>' --compact
+
+# 删除单元格
+uv run "$SCRIPT" edit --path <notebook.ipynb> delete --cell-id <id> --compact
+```
+
+### 5. 验证（重启 + 全部运行）
+
+仅在用户要求干净验证或你需要确认笔记本从上到下运行时使用：
+
+```
+uv run "$SCRIPT" restart-run-all --path <notebook.ipynb> --save-outputs --compact
+```
+
+## 来自经验的实用技巧
+
+1. **服务器启动后的第一次执行可能会超时** — 内核需要一点时间来初始化。如果你超时，只需重试。
+
+2. **内核Python是JupyterLab的Python** — 包必须安装在该环境中。如果你需要额外的包，首先将它们安装到JupyterLab工具环境中。
+
+3. **--compact标志节省大量令牌** — 始终使用它。没有它，JSON输出可能非常冗长。
+
+4. **对于纯REPL使用**，创建一个scratch.ipynb，不要费心单元格编辑。只需重复使用`execute`。
+
+5. **参数顺序很重要** — 像`--path`这样的子命令标志放在子子命令**之前**。例如：`variables --path nb.ipynb list`而不是`variables list --path nb.ipynb`。
+
+6. **如果会话尚不存在**，你需要通过REST API启动一个（请参阅设置部分）。没有实时内核会话，工具无法执行。
+
+7. **错误作为JSON返回**，带有回溯 — 阅读`ename`和`evalue`字段以了解出了什么问题。
+
+8. **偶尔的websocket超时** — 一些操作在第一次尝试时可能会超时，特别是在内核重启后。在升级之前重试一次。
+
+## 超时默认值
+
+脚本每次执行有30秒的默认超时。对于长时间运行的操作，传递`--timeout 120`。对于初始设置或繁重计算，使用慷慨的超时（60+）。
