@@ -9,6 +9,7 @@ import threading
 from pathlib import Path
 from tools.binary_extensions import has_binary_extension
 from tools.file_operations import ShellFileOperations
+from tools.registry import tool_error
 from agent.redact import redact_sensitive_text
 
 logger = logging.getLogger(__name__)
