@@ -502,12 +502,14 @@ def _background_install(*, log_failures: bool = True):
         if found:
             _resolved_path = found
             _install_failure_reason = ""
+            _clear_install_failed()
             return
 
         hermes_bin = os.path.join(_hermes_bin_dir(), "tirith")
         if os.path.isfile(hermes_bin) and os.access(hermes_bin, os.X_OK):
             _resolved_path = hermes_bin
             _install_failure_reason = ""
+            _clear_install_failed()
             return
 
         installed, reason = _install_tirith(log_failures=log_failures)
