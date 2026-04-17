@@ -745,17 +745,27 @@ def _execute_remote(
 
     try:
         # Verify Python is available on the remote
-        py_check = env.execute(
-            "command -v python3 >/dev/null 2>&1 && echo OK",
-            cwd="/", timeout=15,
-        )
-        if "OK" not in py_check.get("output", ""):
+        try:
+            py_check = env.execute(
+                "command -v python3 >/dev/null 2>&1 && echo OK",
+                cwd="/", timeout=15,
+            )
+            if "OK" not in py_check.get("output", ""):
+                return json.dumps({
+                    "status": "error",
+                    "error": (
+                        f"Python 3 is not available in the {env_type} terminal "
+                        "environment. Install Python to use execute_code with "
+                        "remote backends."
+                    ),
+                    "tool_calls_made": 0,
+                    "duration_seconds": 0,
+                })
+        except Exception as exc:
             return json.dumps({
                 "status": "error",
                 "error": (
-                    f"Python 3 is not available in the {env_type} terminal "
-                    "environment. Install Python to use execute_code with "
-                    "remote backends."
+                    f"Failed to check Python availability in {env_type} terminal: {str(exc)}"
                 ),
                 "tool_calls_made": 0,
                 "duration_seconds": 0,
