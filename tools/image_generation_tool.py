@@ -34,6 +34,7 @@ import fal_client
 from tools.debug_helpers import DebugSession
 from tools.managed_tool_gateway import resolve_managed_tool_gateway
 from tools.tool_backend_helpers import managed_nous_tools_enabled, prefers_gateway
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
