@@ -1048,8 +1048,11 @@ class ProcessRegistry:
             alive = self._is_host_pid_alive(pid)
 
             if alive:
+                session_id = entry.get("session_id")
+                if not session_id:
+                    continue
                 session = ProcessSession(
-                    id=entry["session_id"],
+                    id=session_id,
                     command=entry.get("command", "unknown"),
                     task_id=entry.get("task_id", ""),
                     session_key=entry.get("session_key", ""),
