@@ -40,6 +40,7 @@ import httpx
 from agent.auxiliary_client import async_call_llm, extract_content_or_reasoning
 from tools.debug_helpers import DebugSession
 from tools.website_policy import check_website_access
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -745,7 +746,6 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
 
 VISION_ANALYZE_SCHEMA = {
     "name": "vision_analyze",
