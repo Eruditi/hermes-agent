@@ -16,6 +16,7 @@ import logging
 import os
 import re
 from typing import Any, Dict, Optional
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -473,8 +474,6 @@ HA_CALL_SERVICE_SCHEMA = {
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
-
-from tools.registry import registry, tool_error
 
 registry.register(
     name="ha_list_entities",
