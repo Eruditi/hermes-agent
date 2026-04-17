@@ -62,6 +62,7 @@ from tools.managed_tool_gateway import (
 from tools.tool_backend_helpers import managed_nous_tools_enabled, prefers_gateway
 from tools.url_safety import is_safe_url
 from tools.website_policy import check_website_access
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -2040,7 +2041,6 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
 
 WEB_SEARCH_SCHEMA = {
     "name": "web_search",
