@@ -239,6 +239,7 @@ class ExecuteResult:
     """Result from executing a shell command."""
     stdout: str = ""
     exit_code: int = 0
+    stderr: str = ""
 
 
 # =============================================================================
@@ -364,7 +365,8 @@ class ShellFileOperations(FileOperations):
         result = self.env.execute(command, cwd=cwd or self.cwd, **kwargs)
         return ExecuteResult(
             stdout=result.get("output", ""),
-            exit_code=result.get("returncode", 0)
+            exit_code=result.get("returncode", 0),
+            stderr=result.get("stderr", "")
         )
     
     def _has_command(self, cmd: str) -> bool:
@@ -1053,7 +1055,7 @@ class ShellFileOperations(FileOperations):
         
         # rg exit codes: 0=matches found, 1=no matches, 2=error
         if result.exit_code == 2 and not result.stdout.strip():
-            error_msg = result.stderr.strip() if hasattr(result, 'stderr') and result.stderr else "Search error"
+            error_msg = result.stderr.strip() if result.stderr else "Search error"
             return SearchResult(error=f"Search failed: {error_msg}", total_count=0)
         
         # Parse results based on output mode
@@ -1154,7 +1156,7 @@ class ShellFileOperations(FileOperations):
         
         # grep exit codes: 0=matches found, 1=no matches, 2=error
         if result.exit_code == 2 and not result.stdout.strip():
-            error_msg = result.stderr.strip() if hasattr(result, 'stderr') and result.stderr else "Search error"
+            error_msg = result.stderr.strip() if result.stderr else "Search error"
             return SearchResult(error=f"Search failed: {error_msg}", total_count=0)
         
         if output_mode == "files_only":
