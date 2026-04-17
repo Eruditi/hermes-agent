@@ -298,7 +298,7 @@ async def _async_list_services(domain: Optional[str] = None) -> Dict[str, Any]:
 
     hass_url, hass_token = _get_config()
     url = f"{hass_url}/api/services"
-    headers = {"Authorization": f"Bearer {hass_token}", "Content-Type": "application/json"}
+    headers = _get_headers(hass_token)
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
             resp.raise_for_status()
