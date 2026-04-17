@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from hermes_constants import display_hermes_home
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -481,7 +482,6 @@ def check_cronjob_requirements() -> bool:
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
 
 registry.register(
     name="cronjob",
