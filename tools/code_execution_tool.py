@@ -538,11 +538,15 @@ def _ship_file_to_remote(env, remote_path: str, content: str) -> None:
     """
     encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
     quoted_remote_path = shlex.quote(remote_path)
-    env.execute(
-        f"echo '{encoded}' | base64 -d > {quoted_remote_path}",
-        cwd="/",
-        timeout=30,
-    )
+    try:
+        env.execute(
+            f"echo '{encoded}' | base64 -d > {quoted_remote_path}",
+            cwd="/",
+            timeout=30,
+        )
+    except Exception as exc:
+        logger.error("Failed to ship file to remote: %s", exc, exc_info=True)
+        raise
 
 
 def _env_temp_dir(env: Any) -> str:
