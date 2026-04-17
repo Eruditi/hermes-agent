@@ -1782,6 +1782,11 @@ def _camofox_eval(expression: str, task_id: Optional[str] = None) -> str:
         resp = _post(f"/tabs/{tab_id}/evaluate", body={"expression": expression, "userId": tab_info["user_id"]})
 
         # Camofox returns the result in a JSON envelope
+        if resp is None:
+            return json.dumps({
+                "success": False,
+                "error": "Failed to evaluate JavaScript: No response from Camofox"
+            })
         raw_result = resp.get("result") if isinstance(resp, dict) else resp
         parsed = raw_result
         if isinstance(raw_result, str):
