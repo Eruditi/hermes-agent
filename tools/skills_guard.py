@@ -911,10 +911,12 @@ def _determine_verdict(findings: List[Finding]) -> str:
 
     has_critical = any(f.severity == "critical" for f in findings)
     has_high = any(f.severity == "high" for f in findings)
+    has_medium = any(f.severity == "medium" for f in findings)
+    has_low = any(f.severity == "low" for f in findings)
 
     if has_critical:
         return "dangerous"
-    if has_high:
+    if has_high or has_medium or has_low:
         return "caution"
     return "safe"
 

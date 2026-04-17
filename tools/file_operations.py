@@ -65,7 +65,7 @@ WRITE_DENIED_PATHS = {
 }
 
 WRITE_DENIED_PREFIXES = [
-    os.path.realpath(p) + os.sep for p in [
+    os.path.join(os.path.realpath(p), '') for p in [
         os.path.join(_HOME, ".ssh"),
         os.path.join(_HOME, ".aws"),
         os.path.join(_HOME, ".gnupg"),
@@ -429,7 +429,7 @@ class ShellFileOperations(FileOperations):
                 if path == '~':
                     return home
                 elif path.startswith('~/'):
-                    return home + path[1:]  # Replace ~ with home
+                    return os.path.join(home, path[2:])  # Replace ~ with home and use proper path joining
                 # ~username format - extract and validate username before
                 # letting shell expand it (prevent shell injection via
                 # paths like "~; rm -rf /").
@@ -443,7 +443,9 @@ class ShellFileOperations(FileOperations):
                     if expand_result.exit_code == 0 and expand_result.stdout.strip():
                         user_home = expand_result.stdout.strip()
                         suffix = path[1 + len(username):]  # e.g. "/rest/of/path"
-                        return user_home + suffix
+                        if suffix.startswith('/'):
+                            suffix = suffix[1:]
+                        return os.path.join(user_home, suffix)  # Use proper path joining
         
         return path
     

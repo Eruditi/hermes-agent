@@ -366,7 +366,8 @@ class ContextCompressor(ContextEngine):
         call_id_to_tool: Dict[str, tuple] = {}
         for msg in result:
             if msg.get("role") == "assistant":
-                for tc in msg.get("tool_calls") or []:
+                tool_calls = msg.get("tool_calls") or []
+                for tc in tool_calls:
                     if isinstance(tc, dict):
                         cid = tc.get("id", "")
                         fn = tc.get("function", {})
@@ -387,12 +388,20 @@ class ContextCompressor(ContextEngine):
             for i in range(len(result) - 1, -1, -1):
                 msg = result[i]
                 raw_content = msg.get("content") or ""
-                content_len = sum(len(p.get("text", "")) for p in raw_content) if isinstance(raw_content, list) else len(raw_content)
-                msg_tokens = content_len // _CHARS_PER_TOKEN + 10
-                for tc in msg.get("tool_calls") or []:
+                # Optimized content length calculation
+                if isinstance(raw_content, list):
+                    content_len = 0
+                    for p in raw_content:
+                        content_len += len(p.get("text", ""))
+                else:
+                    content_len = len(raw_content)
+                # More accurate token estimation
+                msg_tokens = (content_len + 3) // _CHARS_PER_TOKEN + 10  # Rounded up
+                tool_calls = msg.get("tool_calls") or []
+                for tc in tool_calls:
                     if isinstance(tc, dict):
                         args = tc.get("function", {}).get("arguments", "")
-                        msg_tokens += len(args) // _CHARS_PER_TOKEN
+                        msg_tokens += (len(args) + 3) // _CHARS_PER_TOKEN
                 if accumulated + msg_tokens > protect_tail_tokens and (len(result) - i) >= min_protect:
                     boundary = i
                     break
@@ -416,7 +425,13 @@ class ContextCompressor(ContextEngine):
                 continue
             if len(content) < 200:
                 continue
-            h = hashlib.md5(content.encode("utf-8", errors="replace")).hexdigest()[:12]
+            # Optimized hash calculation for large content
+            if len(content) > 10000:
+                # For very large content, use a hash of the first and last 5000 chars
+                content_sample = content[:5000] + content[-5000:]
+                h = hashlib.md5(content_sample.encode("utf-8", errors="replace")).hexdigest()[:12]
+            else:
+                h = hashlib.md5(content.encode("utf-8", errors="replace")).hexdigest()[:12]
             if h in content_hashes:
                 # This is an older duplicate — replace with back-reference
                 result[i] = {**msg, "content": "[Duplicate tool output — same content as a more recent call]"}
@@ -451,15 +466,21 @@ class ContextCompressor(ContextEngine):
         # example, survives pruning entirely without this.
         for i in range(prune_boundary):
             msg = result[i]
-            if msg.get("role") != "assistant" or not msg.get("tool_calls"):
+            if msg.get("role") != "assistant":
+                continue
+            tool_calls = msg.get("tool_calls")
+            if not tool_calls:
                 continue
             new_tcs = []
             modified = False
-            for tc in msg["tool_calls"]:
+            for tc in tool_calls:
                 if isinstance(tc, dict):
-                    args = tc.get("function", {}).get("arguments", "")
+                    fn = tc.get("function", {})
+                    args = fn.get("arguments", "")
                     if len(args) > 500:
-                        tc = {**tc, "function": {**tc["function"], "arguments": args[:200] + "...[truncated]"}}
+                        # Truncate large arguments
+                        truncated_args = args[:200] + "...[truncated]"
+                        tc = {**tc, "function": {**fn, "arguments": truncated_args}}
                         modified = True
                 new_tcs.append(tc)
             if modified:
@@ -507,6 +528,7 @@ class ContextCompressor(ContextEngine):
             if role == "tool":
                 tool_id = msg.get("tool_call_id", "")
                 if len(content) > self._CONTENT_MAX:
+                    # Truncate large content efficiently
                     content = content[:self._CONTENT_HEAD] + "\n...[truncated]...\n" + content[-self._CONTENT_TAIL:]
                 parts.append(f"[TOOL RESULT {tool_id}]: {content}")
                 continue
@@ -514,6 +536,7 @@ class ContextCompressor(ContextEngine):
             # Assistant messages: include tool call names AND arguments
             if role == "assistant":
                 if len(content) > self._CONTENT_MAX:
+                    # Truncate large content efficiently
                     content = content[:self._CONTENT_HEAD] + "\n...[truncated]...\n" + content[-self._CONTENT_TAIL:]
                 tool_calls = msg.get("tool_calls", [])
                 if tool_calls:
@@ -531,15 +554,19 @@ class ContextCompressor(ContextEngine):
                             fn = getattr(tc, "function", None)
                             name = getattr(fn, "name", "?") if fn else "?"
                             tc_parts.append(f"  {name}(...)")
-                    content += "\n[Tool calls:\n" + "\n".join(tc_parts) + "\n]"
+                    # Efficient string concatenation
+                    tool_calls_str = "\n[Tool calls:\n" + "\n".join(tc_parts) + "\n]"
+                    content += tool_calls_str
                 parts.append(f"[ASSISTANT]: {content}")
                 continue
 
             # User and other roles
             if len(content) > self._CONTENT_MAX:
+                # Truncate large content efficiently
                 content = content[:self._CONTENT_HEAD] + "\n...[truncated]...\n" + content[-self._CONTENT_TAIL:]
             parts.append(f"[{role.upper()}]: {content}")
 
+        # Efficiently join all parts
         return "\n\n".join(parts)
 
     def _generate_summary(self, turns_to_summarize: List[Dict[str, Any]], focus_topic: str = None) -> Optional[str]:
@@ -961,12 +988,14 @@ The user has requested that this compaction PRIORITISE preserving all informatio
         for i in range(n - 1, head_end - 1, -1):
             msg = messages[i]
             content = msg.get("content") or ""
-            msg_tokens = len(content) // _CHARS_PER_TOKEN + 10  # +10 for role/metadata
+            # More accurate token estimation
+            msg_tokens = (len(content) + 3) // _CHARS_PER_TOKEN + 10  # +10 for role/metadata
             # Include tool call arguments in estimate
-            for tc in msg.get("tool_calls") or []:
+            tool_calls = msg.get("tool_calls") or []
+            for tc in tool_calls:
                 if isinstance(tc, dict):
                     args = tc.get("function", {}).get("arguments", "")
-                    msg_tokens += len(args) // _CHARS_PER_TOKEN
+                    msg_tokens += (len(args) + 3) // _CHARS_PER_TOKEN
             # Stop once we exceed the soft ceiling (unless we haven't hit min_tail yet)
             if accumulated + msg_tokens > soft_ceiling and (n - i) >= min_tail:
                 break

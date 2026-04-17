@@ -1418,6 +1418,7 @@ class AIAgent:
                                         f"  Falling back to auto-detected context window.\n",
                                         file=sys.stderr,
                                     )
+                                    _config_context_length = None
                     break
         
         # Select context engine: config-driven (like memory providers).

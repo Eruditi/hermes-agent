@@ -152,6 +152,7 @@ hermes-agent/
 │   ├── vision_tools.py           # Image analysis via multimodal models
 │   ├── delegate_tool.py          # Subagent spawning and parallel task execution
 │   ├── code_execution_tool.py    # Sandboxed Python with RPC tool access
+│   ├── code_review_tool.py       # Code quality analysis and review
 │   ├── session_search_tool.py    # Search past conversations with FTS5 + summarization
 │   ├── cronjob_tools.py          # Scheduled task management
 │   ├── skill_tools.py            # Skill search, load, manage
