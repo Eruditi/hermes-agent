@@ -32,6 +32,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from hermes_constants import get_hermes_home
 from typing import Dict, Any, List, Optional
+from tools.registry import registry, tool_error
 
 # fcntl is Unix-only; on Windows use msvcrt for file locking
 msvcrt = None
@@ -563,7 +564,6 @@ MEMORY_SCHEMA = {
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
 
 registry.register(
     name="memory",
