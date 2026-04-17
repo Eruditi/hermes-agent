@@ -16,6 +16,8 @@ import threading
 import time
 from unittest.mock import patch
 
+from tools.approval import _lock
+
 
 def _clear_approval_state():
     """Reset all module-level approval state between tests."""
@@ -25,6 +27,7 @@ def _clear_approval_state():
     mod._session_approved.clear()
     mod._permanent_approved.clear()
     mod._pending.clear()
+    mod._session_yolo.clear()
 
 
 class TestApprovalHeartbeat:
@@ -141,16 +144,31 @@ class TestApprovalHeartbeat:
         result_holder: dict = {}
 
         def _run_check():
-            result_holder["result"] = check_all_command_guards(
-                "rm -rf /tmp/nonexistent-fast-target", "local"
-            )
+            # Ensure the session key and gateway session are set in the thread's environment
+            os.environ["HERMES_SESSION_KEY"] = self.SESSION_KEY
+            os.environ["HERMES_GATEWAY_SESSION"] = "1"
+            # Run check
+            try:
+                result_holder["result"] = check_all_command_guards(
+                    "rm -rf /tmp/nonexistent-fast-target", "local"
+                )
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
 
         thread = threading.Thread(target=_run_check, daemon=True)
         thread.start()
 
-        # Resolve almost immediately — the wait loop should return within
-        # its current 1s poll slice.
-        time.sleep(0.1)
+        # Wait until the approval entry is added to the queue
+        from tools.approval import _gateway_queues
+        start_wait = time.monotonic()
+        while time.monotonic() - start_wait < 5:
+            with _lock:
+                if self.SESSION_KEY in _gateway_queues and _gateway_queues[self.SESSION_KEY]:
+                    break
+            time.sleep(0.01)
+        
+        # Resolve the approval
         resolve_gateway_approval(self.SESSION_KEY, "once")
         thread.join(timeout=5)
         elapsed = time.monotonic() - start_time
@@ -182,6 +200,8 @@ class TestApprovalHeartbeat:
             return real_import(name, *args, **kwargs)
 
         def _run_check():
+            # Ensure the session key is set in the thread's environment
+            os.environ["HERMES_SESSION_KEY"] = self.SESSION_KEY
             with patch.object(builtins, "__import__",
                               side_effect=_fail_environments_base):
                 result_holder["result"] = check_all_command_guards(
@@ -191,7 +211,15 @@ class TestApprovalHeartbeat:
         thread = threading.Thread(target=_run_check, daemon=True)
         thread.start()
 
-        time.sleep(0.2)
+        # Wait until the approval entry is added to the queue
+        from tools.approval import _gateway_queues
+        start_wait = time.monotonic()
+        while time.monotonic() - start_wait < 5:
+            with _lock:
+                if self.SESSION_KEY in _gateway_queues and _gateway_queues[self.SESSION_KEY]:
+                    break
+            time.sleep(0.01)
+        
         resolve_gateway_approval(self.SESSION_KEY, "once")
         thread.join(timeout=5)
 
