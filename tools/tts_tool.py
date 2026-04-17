@@ -42,6 +42,7 @@ from typing import Callable, Dict, Any, Optional
 from urllib.parse import urljoin
 
 from hermes_constants import display_hermes_home
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 from tools.managed_tool_gateway import resolve_managed_tool_gateway
@@ -1301,7 +1302,6 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
 
 TTS_SCHEMA = {
     "name": "text_to_speech",
