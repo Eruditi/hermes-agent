@@ -106,10 +106,21 @@ def _run_async(coro):
         loop = None
 
     if loop and loop.is_running():
-        # Inside an async context (gateway, RL env) — run in a fresh thread.
+        # Inside an async context (gateway, RL env) — run in a fresh thread with persistent loop
         import concurrent.futures
+        
+        def run_with_persistent_loop():
+            # Create a persistent loop for this thread
+            thread_loop = asyncio.new_event_loop()
+            try:
+                return thread_loop.run_until_complete(coro)
+            finally:
+                # Don't close the loop immediately - let it be garbage collected
+                # This prevents "Event loop is closed" errors for async clients
+                pass
+        
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(asyncio.run, coro)
+            future = pool.submit(run_with_persistent_loop)
             return future.result(timeout=300)
 
     # If we're on a worker thread (e.g., parallel tool execution in
