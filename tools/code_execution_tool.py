@@ -45,6 +45,7 @@ import uuid
 
 _IS_WINDOWS = platform.system() == "Windows"
 from typing import Any, Dict, List, Optional
+from tools.registry import registry, tool_error
 
 # Availability gate: UDS requires a POSIX OS
 logger = logging.getLogger(__name__)
@@ -1413,7 +1414,6 @@ EXECUTE_CODE_SCHEMA = build_execute_code_schema()
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
 
 registry.register(
     name="execute_code",
