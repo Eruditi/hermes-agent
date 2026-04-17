@@ -514,7 +514,7 @@ def _write_file(name: str, file_path: str, file_content: str) -> Dict[str, Any]:
     if err:
         return {"success": False, "error": err}
 
-    if not file_content and file_content != "":
+    if file_content is None:
         return {"success": False, "error": "file_content is required."}
 
     # Check size limits
