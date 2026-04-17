@@ -14,6 +14,7 @@ import ssl
 import time
 
 from agent.redact import redact_sensitive_text
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -1292,7 +1293,6 @@ async def _send_qqbot(pconfig, chat_id, message):
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
 
 registry.register(
     name="send_message",
