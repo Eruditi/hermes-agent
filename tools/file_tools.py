@@ -9,7 +9,7 @@ import threading
 from pathlib import Path
 from tools.binary_extensions import has_binary_extension
 from tools.file_operations import ShellFileOperations
-from tools.registry import tool_error
+from tools.registry import registry, tool_error
 from agent.redact import redact_sensitive_text
 
 logger = logging.getLogger(__name__)
@@ -693,7 +693,6 @@ def search_tool(pattern: str, target: str = "content", path: str = ".",
 # ---------------------------------------------------------------------------
 # Schemas + Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
 
 
 def _check_file_reqs():
