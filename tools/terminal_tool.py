@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 # long-running subprocesses immediately instead of blocking until timeout.
 # ---------------------------------------------------------------------------
 from tools.interrupt import is_interrupted, _interrupt_event  # noqa: F401 — re-exported
+from tools.registry import registry
 # display_hermes_home imported lazily at call site (stale-module safety during hermes update)
 
 
@@ -1685,7 +1686,6 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry
 
 TERMINAL_SCHEMA = {
     "name": "terminal",
