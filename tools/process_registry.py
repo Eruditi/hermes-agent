@@ -46,6 +46,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from hermes_cli.config import get_hermes_home
+from tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -1101,7 +1102,6 @@ process_registry = ProcessRegistry()
 # ---------------------------------------------------------------------------
 # Registry -- the "process" tool schema + handler
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
 
 PROCESS_SCHEMA = {
     "name": "process",
