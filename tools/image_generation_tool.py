@@ -780,7 +780,6 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
 
 IMAGE_GENERATE_SCHEMA = {
     "name": "image_generate",
