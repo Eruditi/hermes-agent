@@ -1,7 +1,6 @@
 """Tests for the Camofox browser backend."""
 
 import json
-import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,7 +16,6 @@ from tools.browser_camofox import (
     camofox_scroll,
     camofox_snapshot,
     camofox_type,
-    camofox_vision,
     check_camofox_available,
     is_camofox_mode,
 )
