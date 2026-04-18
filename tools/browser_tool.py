@@ -67,7 +67,7 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 from agent.auxiliary_client import call_llm
 from hermes_constants import get_hermes_home
-from tools.registry import registry, tool_error
+
 
 try:
     from tools.website_policy import check_website_access
