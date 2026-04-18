@@ -1650,7 +1650,6 @@ class TestUtilityToolRegistration:
 # SamplingHandler tests
 # ===========================================================================
 
-import math
 import time
 
 from mcp.types import (
