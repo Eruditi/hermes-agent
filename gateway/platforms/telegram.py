@@ -534,7 +534,7 @@ class TelegramAdapter(BasePlatformAdapter):
                         break
 
             if changed:
-                with open(config_path, "w") as f:
+                with open(config_path, "w", encoding="utf-8") as f:
                     _yaml.dump(config, f, default_flow_style=False, sort_keys=False)
                 logger.info(
                     "[%s] Persisted thread_id=%s for topic '%s' in config.yaml",
