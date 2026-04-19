@@ -880,6 +880,18 @@ class SessionDB:
                 except (json.JSONDecodeError, TypeError):
                     logger.warning("Failed to deserialize tool_calls in get_messages, falling back to []")
                     msg["tool_calls"] = []
+            if msg.get("reasoning_details"):
+                try:
+                    msg["reasoning_details"] = json.loads(msg["reasoning_details"])
+                except (json.JSONDecodeError, TypeError):
+                    logger.warning("Failed to deserialize reasoning_details, falling back to None")
+                    msg["reasoning_details"] = None
+            if msg.get("codex_reasoning_items"):
+                try:
+                    msg["codex_reasoning_items"] = json.loads(msg["codex_reasoning_items"])
+                except (json.JSONDecodeError, TypeError):
+                    logger.warning("Failed to deserialize codex_reasoning_items, falling back to None")
+                    msg["codex_reasoning_items"] = None
             result.append(msg)
         return result
 

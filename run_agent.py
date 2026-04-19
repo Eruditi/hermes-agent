@@ -2608,12 +2608,7 @@ class AIAgent:
                 role = msg.get("role", "unknown")
                 content = msg.get("content")
                 tool_calls_data = None
-                if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    tool_calls_data = [
-                        {"name": tc.function.name, "arguments": tc.function.arguments}
-                        for tc in msg.tool_calls
-                    ]
-                elif isinstance(msg.get("tool_calls"), list):
+                if isinstance(msg.get("tool_calls"), list):
                     tool_calls_data = msg["tool_calls"]
                 self._session_db.append_message(
                     session_id=self.session_id,
